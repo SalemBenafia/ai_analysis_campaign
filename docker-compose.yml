@@ -1,0 +1,189 @@
+services:
+  # ─── PostgreSQL — primary data warehouse ─────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: insight_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-insightai}
+      POSTGRES_USER: ${POSTGRES_USER:-insight}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-insight_secret}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-insight} -d ${POSTGRES_DB:-insightai}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256m
+
+  # ─── Redis — session cache + rate limiting ────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: insight_redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 64mb
+      --maxmemory-policy allkeys-lru
+      --save ""
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: 80m
+
+  # ─── MinIO — report PDFs + dataset uploads ───────────────────────────────────
+  minio:
+    image: minio/minio:latest
+    container_name: insight_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minio_secret_123}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: 128m
+
+  # ─── FastAPI Backend (DuckDB runs in-process — no separate container) ─────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: insight_backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-insight}:${POSTGRES_PASSWORD:-insight_secret}@postgres:5432/${POSTGRES_DB:-insightai}
+      REDIS_URL: redis://redis:6379/0
+      MINIO_ENDPOINT: minio:9000
+      CUBE_API_URL: http://cube:4000
+    volumes:
+      - ./backend:/app
+      - duckdb_data:/app/duckdb_data
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1 --loop uvloop
+    deploy:
+      resources:
+        limits:
+          cpus: "0.8"
+          memory: 1g
+
+  # ─── Cube Core — semantic layer (reads marts parquet from MinIO via DuckDB) ──
+  # NOTE: never mount duckdb_data here — the backend holds the read-write
+  # DuckDB file; Cube runs its own in-memory DuckDB over S3 parquet.
+  cube:
+    image: cubejs/cube:latest
+    container_name: insight_cube
+    restart: unless-stopped
+    environment:
+      CUBEJS_DEV_MODE: "false"
+      CUBEJS_API_SECRET: ${CUBEJS_API_SECRET}
+      CUBEJS_DB_TYPE: duckdb
+      CUBEJS_DB_DUCKDB_MEMORY_LIMIT: 256MB
+      CUBEJS_DB_DUCKDB_S3_ENDPOINT: minio:9000
+      CUBEJS_DB_DUCKDB_S3_REGION: us-east-1
+      CUBEJS_DB_DUCKDB_S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minioadmin}
+      CUBEJS_DB_DUCKDB_S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minio_secret_123}
+      CUBEJS_DB_DUCKDB_S3_USE_SSL: "false"
+      CUBEJS_DB_DUCKDB_S3_URL_STYLE: path
+      CUBEJS_CACHE_AND_QUEUE_DRIVER: memory
+      CUBEJS_MODELS_URL: http://backend:8000/api/v1/internal/cube
+      CUBE_INTERNAL_TOKEN: ${CUBE_INTERNAL_TOKEN}
+      CUBEJS_LOG_LEVEL: warn
+    volumes:
+      - ./cube/cube.js:/cube/conf/cube.js:ro
+    ports:
+      - "4000:4000"
+    depends_on:
+      minio:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:4000/readyz').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 20s
+      timeout: 10s
+      retries: 6
+    deploy:
+      resources:
+        limits:
+          cpus: "0.8"
+          memory: 768m
+
+  # ─── Next.js Frontend ──────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: dev
+    container_name: insight_frontend
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+      API_INTERNAL_URL: http://backend:8000/api/v1
+      NEXT_PUBLIC_APP_NAME: InsightAI
+      # Next.js 15 dev-mode compilation is memory-hungry; cap the V8 heap
+      # below the container limit so it GCs instead of getting killed.
+      NODE_OPTIONS: "--max-old-space-size=1536"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    command: npm run dev
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 2g
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  duckdb_data:
+
+networks:
+  default:
+    name: insightai_network

@@ -1,0 +1,17 @@
+[project]
+name = "insightai-backend"
+version = "1.0.0"
+description = "AI-powered Meta Ads Intelligence Platform — FastAPI backend"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "A", "COM", "C4", "DTZ", "T20", "RET", "SIM", "ARG", "PTH", "ERA", "PL", "PERF"]
+ignore = ["COM812", "A002", "PLR0913", "B008", "N818"]
+
+[tool.ruff.lint.per-file-ignores]
+"alembic/*" = ["ERA001", "E501"]
+"seed.py" = ["T201"]

@@ -1,0 +1,14 @@
+name: insightai_transform
+version: "1.0.0"
+config-version: 2
+
+profile: insightai
+
+model-paths: ["models"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  insightai_transform:
+    staging:
+      +materialized: external

@@ -1,0 +1,68 @@
+# ─── Web Framework ────────────────────────────────────────────────────────────
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+uvloop==0.21.0
+python-multipart==0.0.12
+
+# ─── Database ─────────────────────────────────────────────────────────────────
+sqlalchemy[asyncio]==2.0.36
+asyncpg==0.30.0
+alembic==1.14.0
+
+# ─── Pydantic + Settings ──────────────────────────────────────────────────────
+pydantic==2.10.3
+pydantic-settings==2.6.1
+email-validator==2.2.0
+
+# ─── Auth ─────────────────────────────────────────────────────────────────────
+bcrypt==4.2.1
+python-jose[cryptography]==3.3.0
+
+# ─── HTTP Client ──────────────────────────────────────────────────────────────
+httpx==0.28.1
+
+# ─── Data Processing (Ingestion Layer) ───────────────────────────────────────
+polars==1.17.1
+openpyxl==3.1.5
+pyarrow==18.1.0
+
+# ─── Analytics Engine (in-process, no container) ─────────────────────────────
+duckdb==1.1.3
+
+# ─── AI / LLM Stack (Groq-only provider with model rotation) ─────────────────
+langchain==0.3.14
+langgraph==0.2.59
+langchain-groq==0.2.3
+langchain-community==0.3.14
+
+# ─── Semantic Layer / SQL safety ──────────────────────────────────────────────
+sqlglot==26.3.8
+PyYAML==6.0.2
+
+# ─── Transform (dbt reads raw parquet from MinIO, writes marts parquet) ──────
+dbt-core==1.9.1
+dbt-duckdb==1.9.1
+
+# ─── Scheduler (in-process, single worker) ────────────────────────────────────
+apscheduler==3.11.0
+
+# ─── Report Generation ────────────────────────────────────────────────────────
+reportlab==4.2.5
+
+# ─── Object Storage ───────────────────────────────────────────────────────────
+minio==7.2.12
+
+# ─── Cache / Session ─────────────────────────────────────────────────────────
+redis[hiredis]==5.2.1
+
+# ─── Logging ──────────────────────────────────────────────────────────────────
+structlog==24.4.0
+
+# ─── Async Utilities ──────────────────────────────────────────────────────────
+aiofiles==24.1.0
+anyio==4.7.0
+
+# ─── Testing ──────────────────────────────────────────────────────────────────
+pytest==8.3.4
+pytest-asyncio==0.25.2
+respx==0.22.0

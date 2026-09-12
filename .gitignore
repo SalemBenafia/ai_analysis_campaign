@@ -1,0 +1,27 @@
+# Secrets — never commit
+.env
+backend/.env
+frontend/.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+backend/dbt/target/
+backend/dbt/logs/
+backend/dbt/dbt_packages/
+
+# Data
+duckdb_data/
+backend/duckdb_data/
+
+# Node
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# Misc
+*.log
+.DS_Store

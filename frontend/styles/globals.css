@@ -1,0 +1,173 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #0a0f1f;
+    --background-secondary: #0f1629;
+    --background-card: #111827;
+    --neon-blue: #00f0ff;
+    --neon-cyan: #00d4ff;
+    --neon-purple: #7c3aed;
+    --border: #1e2d4a;
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #475569;
+  }
+
+  * {
+    @apply border-border;
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--text-primary);
+    font-family: 'Inter', system-ui, sans-serif;
+    min-height: 100vh;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track { background: #0a0f1f; }
+  ::-webkit-scrollbar-thumb {
+    background: #1e2d4a;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: #00f0ff44; }
+
+  ::selection {
+    background: #00f0ff33;
+    color: #00f0ff;
+  }
+}
+
+@layer components {
+  .glass {
+    background: rgba(17, 24, 39, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(30, 45, 74, 0.8);
+  }
+
+  .neon-border {
+    border: 1px solid rgba(0, 240, 255, 0.3);
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.1), inset 0 0 10px rgba(0, 240, 255, 0.05);
+  }
+
+  .neon-text {
+    color: #00f0ff;
+    text-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+  }
+
+  .btn-primary {
+    @apply relative overflow-hidden px-6 py-2.5 rounded-lg font-medium text-sm transition-all duration-200;
+    background: linear-gradient(135deg, #00d4ff, #00f0ff);
+    color: #0a0f1f;
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+  }
+  .btn-primary:hover {
+    box-shadow: 0 0 30px rgba(0, 240, 255, 0.5);
+    transform: translateY(-1px);
+  }
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-ghost {
+    @apply px-6 py-2.5 rounded-lg font-medium text-sm transition-all duration-200;
+    background: transparent;
+    color: #94a3b8;
+    border: 1px solid #1e2d4a;
+  }
+  .btn-ghost:hover {
+    border-color: #00f0ff44;
+    color: #00f0ff;
+    background: rgba(0, 240, 255, 0.05);
+  }
+
+  .card {
+    @apply rounded-xl p-6;
+    background: linear-gradient(145deg, #111827, #0f1629);
+    border: 1px solid #1e2d4a;
+  }
+  .card:hover { border-color: rgba(0, 240, 255, 0.2); }
+
+  .input-cyber {
+    @apply w-full px-4 py-3 rounded-lg text-sm outline-none transition-all duration-200;
+    background: rgba(15, 22, 41, 0.8);
+    border: 1px solid #1e2d4a;
+    color: #e2e8f0;
+  }
+  .input-cyber::placeholder { color: #475569; }
+  .input-cyber:focus {
+    border-color: #00f0ff66;
+    box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.1);
+  }
+
+  .sidebar-item {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer;
+    color: #64748b;
+  }
+  .sidebar-item:hover {
+    background: rgba(0, 240, 255, 0.05);
+    color: #e2e8f0;
+  }
+  .sidebar-item.active {
+    background: rgba(0, 240, 255, 0.1);
+    color: #00f0ff;
+    border: 1px solid rgba(0, 240, 255, 0.2);
+  }
+
+  .stat-card {
+    @apply card flex flex-col gap-2;
+  }
+  .stat-value {
+    @apply text-2xl font-bold;
+    color: #00f0ff;
+  }
+  .stat-label {
+    @apply text-xs font-medium uppercase tracking-wider;
+    color: #64748b;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    background: linear-gradient(135deg, #00f0ff, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .bg-grid {
+    background-image:
+      linear-gradient(rgba(0,240,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,240,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  .animate-in {
+    animation: fade-in 0.3s ease-out, slide-up 0.4s ease-out;
+  }
+
+  .skeleton {
+    @apply relative overflow-hidden;
+    background: #111827;
+  }
+  .skeleton::after {
+    content: '';
+    @apply absolute inset-0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
+    animation: shimmer 2s linear infinite;
+  }
+}
